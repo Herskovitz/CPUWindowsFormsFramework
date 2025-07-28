@@ -1,9 +1,12 @@
 ﻿using System.Data;
 
+
 namespace CPUWindowsFormsFramework
 {
     public class WindowsFormsUtility
     {
+        static string deletecolumnname = "deletecol";
+
         public static void SetListBinding(ComboBox lst, DataTable sourcedt, DataTable? targetdt, string tablename)
         {
             lst.DataSource = sourcedt;
@@ -12,13 +15,13 @@ namespace CPUWindowsFormsFramework
             if (targetdt != null)
             {
                 lst.DataBindings.Add("SelectedValue", targetdt, lst.ValueMember, false, DataSourceUpdateMode.OnPropertyChanged);
-            }            
+            }
         }
         public static void SetControlBinding(Control ctrl, BindingSource bindsource)
         {
             string propertyname = "";
             string columnname = "";
-            string controlname = ctrl.Name.ToLower();
+            string controlname = ctrl.Name;
             string controltype = controlname.Substring(0, 3);
             columnname = controlname.Substring(3);
 
@@ -31,6 +34,9 @@ namespace CPUWindowsFormsFramework
                 case "dtp":
                     propertyname = "Value";
                     break;
+                case "chk":
+                    propertyname = "Checked";
+                    break;
             }
 
             if (propertyname != "" && columnname != "")
@@ -38,11 +44,18 @@ namespace CPUWindowsFormsFramework
                 ctrl.DataBindings.Add(propertyname, bindsource, columnname, true, DataSourceUpdateMode.OnPropertyChanged);
             }
         }
-        public static void FormatGridForDataList(DataGridView grid, string tablename)
+        public static void FormatGridForDataList(DataGridView grid, string tablename, string columnnametext = "ListOrder")
         {
             grid.AllowUserToAddRows = false;
             grid.ReadOnly = true;
             grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            foreach (DataGridViewColumn c in grid.Columns)
+            {
+                if (c.Name.Contains(columnnametext) || c.Name.Contains("ListOrder"))
+                {
+                    c.Visible = false;
+                }
+            }
             DoFormatGrid(grid, tablename);
         }
         public static void FormatGridForEdit(DataGridView grid, string tablename)
@@ -52,7 +65,7 @@ namespace CPUWindowsFormsFramework
         }
         private static void DoFormatGrid(DataGridView grid, string tablename)
         {
-            grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+            grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             grid.RowHeadersWidth = 25;
             foreach (DataGridViewColumn col in grid.Columns)
             {
@@ -66,17 +79,24 @@ namespace CPUWindowsFormsFramework
             {
                 grid.Columns[pkname].Visible = false;
             }
+            if (grid.Columns.Contains(deletecolumnname))
+            {
+                int colcount = grid.Columns.Count;
+                grid.Columns[deletecolumnname].DisplayIndex = colcount - 1;
+            }
         }
         public static int GetIdFromGrid(DataGridView grid, int rowindex, string columnname)
         {
             int id = 0;
-            if (rowindex < grid.Rows.Count && grid.Columns.Contains(columnname) && grid.Rows[rowindex].Cells[columnname].Value != DBNull.Value)
-            {
-                if (grid.Rows[rowindex].Cells[columnname].Value is int)
+
+                if (rowindex < grid.Rows.Count && grid.Columns.Contains(columnname) && grid.Rows[rowindex].Cells[columnname].Value != DBNull.Value)
                 {
-                    id = (int)grid.Rows[rowindex].Cells[columnname].Value;
+                    if (grid.Rows[rowindex].Cells[columnname].Value is int)
+                    {
+                        id = (int)grid.Rows[rowindex].Cells[columnname].Value;
+                    }
                 }
-            }
+            
             return id;
         }
         public static int GetIdFromComboBox(ComboBox lst)
@@ -118,7 +138,6 @@ namespace CPUWindowsFormsFramework
                     exists = true;
                     break;
                 }
-
             }
             return exists;
         }
@@ -138,7 +157,6 @@ namespace CPUWindowsFormsFramework
                 }
             }
         }
-
         private static void Btn_Click(object? sender, EventArgs e)
         {
             if (sender != null && sender is ToolStripButton)
@@ -149,6 +167,10 @@ namespace CPUWindowsFormsFramework
                     ((Form)btn.Tag).Activate();
                 }
             }
+        }
+        public static void ManageAvailableButtons(bool enable, Button btn)
+        {
+            btn.Enabled = enable;
         }
     }
 }
